@@ -1,4 +1,6 @@
 streamlit
-https://github.com/stefanrmmr/streamlit-audio-recorder/tree/main/st_audiorec
 openai
+git+https://github.com/stefanrmmr/streamlit-audio-recorder.git
+
+
 
