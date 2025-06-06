@@ -16,7 +16,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Initialize OpenAI client
-client = OpenAI(api_key="api_key")
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 st.title("AI-Powered Meeting Transcriber")
 st.markdown("Record your voice below and get an instant transcription!!")
 
