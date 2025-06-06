@@ -1,4 +1,4 @@
 streamlit
-st-audiorec
+https://github.com/stefanrmmr/streamlit-audio-recorder/tree/main/st_audiorec
 openai
 
