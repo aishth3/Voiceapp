@@ -1,6 +1,7 @@
 streamlit
 openai
-git+https://github.com/stefanrmmr/streamlit-audio-recorder.git
+streamlit-audiorec
+
 
 
 
