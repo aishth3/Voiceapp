@@ -1,3 +1,4 @@
 streamlit
-git+https://github.com/stefanrmmr/st_audiorec.git
+st-audiorec
 openai
+
