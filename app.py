@@ -26,7 +26,6 @@ class AudioProcessor:
         audio_frames.append(audio)
         return frame
 
-# WebRTC configuration
 webrtc_ctx = webrtc_streamer(
     key="audio",
     mode=WebRtcMode.SENDONLY,
@@ -35,8 +34,9 @@ webrtc_ctx = webrtc_streamer(
     rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
     media_stream_constraints={"audio": True},
     sendback_audio=False,
-    audio_processor_factory=AudioProcessor,
+    audio_processor_factory=lambda: AudioProcessor(),  # ✅ fixed line
 )
+
 
 # When recording is active
 if webrtc_ctx.state.playing:
