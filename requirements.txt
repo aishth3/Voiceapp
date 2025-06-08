@@ -1,6 +1,7 @@
 streamlit
 openai
 streamlit-audiorec
+python-dotenv
 
 
 
