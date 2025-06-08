@@ -1,6 +1,10 @@
-streamlit
-openai
-streamlit-audiorec
+streamlit>=1.30.0
+openai>=1.0.0
+SpeechRecognition>=3.10.0
+streamlit-webrtc>=0.45.0
+pydub>=0.25.1
+numpy
 python-dotenv
+
 
 
