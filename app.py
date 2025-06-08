@@ -63,3 +63,4 @@ elif audio_data is not None:
         tmp_file.write(audio_data)
         tmp_path = tmp_file.name
     transcribe_and_enhance(tmp_path)
+
