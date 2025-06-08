@@ -1,70 +1,84 @@
 import streamlit as st
-from streamlit_audiorecorder import audiorecorder
-import tempfile
-import os
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
 import speech_recognition as sr
+import tempfile
+import numpy as np
+import av
+from pydub import AudioSegment
+import os
 from openai import OpenAI
 
-# Load OpenAI client using Streamlit secrets
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# Page setup
-st.set_page_config(page_title="AI-Powered Transcriber", layout="centered")
+st.set_page_config(page_title="Voice Transcriber", layout="centered")
+st.title("🎙️ AI Voice Transcriber with GPT-4 Enhancement")
+st.markdown("Click 'Start' to record your voice. Then transcribe and enhance it.")
 
-# CSS to adjust padding
-st.markdown("""
-    <style>
-    .block-container {
-        padding-top: 1rem;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Buffer to collect audio frames
+audio_frames = []
 
-# Title
-st.title("🎙️ AI-Powered Transcriber")
-st.write("Record your voice and get a clean transcript.")
+# AudioProcessor to receive audio
+class AudioProcessor:
+    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
+        audio = frame.to_ndarray()
+        audio_frames.append(audio)
+        return frame
 
-# Step 1: Record audio
-st.subheader("Step 1: Record")
-audio_data = audiorecorder("Click to record", "Recording...")
+# Start WebRTC audio recorder
+webrtc_ctx = webrtc_streamer(
+    key="audio",
+    mode=WebRtcMode.SENDONLY,
+    client_settings=ClientSettings(media_stream_constraints={"audio": True, "video": False}),
+    audio_receiver_size=1024,
+    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+    sendback_audio=False,
+    media_stream_constraints={"audio": True},
+)
 
-# Step 2: Transcribe if recording exists
-if audio_data is not None:
-    st.audio(audio_data.tobytes(), format='audio/wav')
+# Transcribe button
+if st.button("📝 Transcribe Now"):
+    if not audio_frames:
+        st.warning("No audio recorded yet.")
+    else:
+        st.info("Transcribing...")
+        audio_np = np.concatenate(audio_frames, axis=0).astype(np.int16)
+        sample_rate = 48000
 
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-        f.write(audio_data.tobytes())
-        file_path = f.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+            sound = AudioSegment(
+                audio_np.tobytes(),
+                frame_rate=sample_rate,
+                sample_width=2,
+                channels=1
+            )
+            sound.export(f.name, format="wav")
+            temp_audio_path = f.name
 
-    recognizer = sr.Recognizer()
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(temp_audio_path) as source:
+            audio = recognizer.record(source)
 
-    with sr.AudioFile(file_path) as source:
-        audio = recognizer.record(source)
+        try:
+            transcript = recognizer.recognize_google(audio)
+            st.success("Transcript:")
+            st.write(transcript)
 
-    try:
-        transcript = recognizer.recognize_google(audio)
-        st.success("Raw Transcript:")
-        st.write(transcript)
+            if st.button("✨ Enhance with GPT-4"):
+                with st.spinner("Enhancing..."):
+                    response = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You're a professional transcription editor. Clean up the text for clarity and grammar without changing the meaning."
+                            },
+                            {"role": "user", "content": transcript}
+                        ]
+                    )
+                    st.subheader("Enhanced Transcript")
+                    st.markdown(response.choices[0].message.content)
 
-        if st.button(" Enhance Transcript"):
-            with st.spinner("Improving clarity and grammar..."):
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are a helpful assistant. Clean up the user's spoken transcript for grammar, clarity, and readability."
-                        },
-                        {"role": "user", "content": transcript}
-                    ]
-                )
-                st.markdown("### Enhanced Transcript")
-                st.markdown(response.choices[0].message.content)
-
-    except Exception as e:
-        st.error(f"Transcription error: {e}")
-
-    finally:
-        os.remove(file_path)
-else:
-    st.info("Click the button above to start recording your voice.")
+        except Exception as e:
+            st.error(f"Transcription failed: {e}")
+        finally:
+            os.remove(temp_audio_path)
