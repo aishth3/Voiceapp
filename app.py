@@ -4,17 +4,17 @@ import tempfile
 import os
 from openai import OpenAI
 
-# Set page config
+# Page setup
 st.set_page_config(page_title="Transcriber", layout="centered")
 
-# Apply CSS to shift layout up
+# CSS for cleaner layout and small loader
 st.markdown("""
     <style>
     .block-container {
         padding-top: 1rem;
     }
     img.loading-gif {
-        width: 50px !important;
+        width: 40px !important;
         height: auto;
         margin: 10px auto;
         display: block;
@@ -22,31 +22,33 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Set up OpenAI
+# OpenAI client using secret
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# App Title
-st.title(" AI-Powered Meeting Transcriber")
-st.markdown(" Record your voice and click **Transcribe** to get instant results!")
+# App Header
+st.title("AI-Powered Transcriber")
+st.write("Record your voice and click Transcribe to view your transcript.")
 
-# Step 1: Record audio
-st.subheader(" Record Your Voice")
+# Record audio
+st.subheader("Record Audio")
 wav_audio_data = st_audiorec()
 
-# Step 2: Display Transcribe button
+# If recording exists, show audio and transcribe button
 if wav_audio_data:
     st.audio(wav_audio_data, format='audio/wav')
-    if st.button(" Transcribe"):
+    
+    if st.button("Transcribe"):
+        # Save audio to temp file
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
             f.write(wav_audio_data)
             file_path = f.name
 
-        # Show small loading animation
+        # Loading animation
         st.markdown(
             '<img src="https://i.gifer.com/ZZ5H.gif" class="loading-gif" alt="Loading...">',
             unsafe_allow_html=True
         )
-        st.info("Transcribing audio...")
+        st.info("Transcribing...")
 
         try:
             with open(file_path, "rb") as audio_file:
@@ -55,13 +57,15 @@ if wav_audio_data:
                     file=audio_file
                 )
 
-            st.success(" Transcription Complete!")
-            st.subheader(" Transcript")
+            st.success("Transcription Complete")
+            st.subheader("Transcript")
             st.write(transcript.text)
 
         except Exception as e:
-            st.error(f"❌ OpenAI Whisper API error: {e}")
+            st.error(f"Error: {e}")
 
+        # Clean up
         os.remove(file_path)
 else:
-    st.caption("Click the microphone above to record your voice.")
+    st.caption("Click the mic above to start recording.")
+
