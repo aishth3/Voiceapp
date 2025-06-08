@@ -2,7 +2,8 @@ import streamlit as st
 import tempfile
 import os
 import speech_recognition as sr
-from openai import OpenAI
+import openai
+
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
