@@ -5,3 +5,5 @@ streamlit-webrtc==0.45.0
 pydub
 numpy
 python-dotenv
+aiortc==1.4.0
+opencv-python-headless
