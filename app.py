@@ -3,60 +3,23 @@ import tempfile
 import os
 import speech_recognition as sr
 from openai import OpenAI
-from streamlit_webrtc import webrtc_streamer, AudioProcessorBase, ClientSettings
-import av
-import numpy as np
-import wave
+from st_audiorecorder import audiorecorder
 
-# Initialize OpenAI client
+# Load OpenAI client securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.set_page_config(page_title="Voice Transcriber", layout="centered")
 st.title("🎙️ Upload or Record Audio & Transcribe")
-st.markdown("Upload a `.wav` file or record audio to get transcription and enhancement.")
+st.markdown("Upload a `.wav` file or record your voice below to get transcription and enhancement.")
 
-# ---------- File Upload Section ----------
+# --- Upload Option ---
 uploaded_file = st.file_uploader("📤 Upload a WAV audio file", type=["wav"])
 
-# ---------- WebRTC Audio Recording Section ----------
+# --- Record Option ---
 st.markdown("### Or record your voice below:")
+audio_data = audiorecorder("🔴 Start Recording", "⏹️ Stop Recording")
 
-class AudioProcessor(AudioProcessorBase):
-    def __init__(self) -> None:
-        self.frames = []
-
-    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
-        audio = frame.to_ndarray().flatten()
-        self.frames.append(audio)
-        return frame
-
-ctx = webrtc_streamer(
-    key="send_audio",
-    mode="sendonly",
-    in_audio=True,
-    client_settings=ClientSettings(media_stream_constraints={"audio": True, "video": False}),
-    audio_processor_factory=AudioProcessor,
-)
-
-recorded_audio_path = None
-
-if ctx.state.playing and ctx.audio_processor:
-    if st.button("📥 Save Recording"):
-        # Save the recorded raw audio as a .wav file
-        raw_audio = np.concatenate(ctx.audio_processor.frames, axis=0)
-        sample_rate = 48000  # WebRTC default sample rate
-        recorded_audio_path = os.path.join(tempfile.gettempdir(), "recorded.wav")
-
-        with wave.open(recorded_audio_path, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)  # 16-bit audio
-            wf.setframerate(sample_rate)
-            wf.writeframes(raw_audio.astype(np.int16).tobytes())
-
-        st.audio(recorded_audio_path, format="audio/wav")
-        st.success("Recording saved!")
-
-# ---------- Transcription + Enhancement Logic ----------
+# --- Transcription and Enhancement Function ---
 def transcribe_and_enhance(audio_path):
     recognizer = sr.Recognizer()
     with sr.AudioFile(audio_path) as source:
@@ -85,7 +48,7 @@ def transcribe_and_enhance(audio_path):
     finally:
         os.remove(audio_path)
 
-# ---------- Trigger Transcription ----------
+# --- Handle Uploaded File ---
 if uploaded_file is not None:
     st.audio(uploaded_file, format='audio/wav')
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
@@ -93,5 +56,10 @@ if uploaded_file is not None:
         tmp_path = tmp_file.name
     transcribe_and_enhance(tmp_path)
 
-elif recorded_audio_path is not None:
-    transcribe_and_enhance(recorded_audio_path)
+# --- Handle Recorded Audio ---
+elif audio_data is not None:
+    st.audio(audio_data, format="audio/wav")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+        tmp_file.write(audio_data)
+        tmp_path = tmp_file.name
+    transcribe_and_enhance(tmp_path)
