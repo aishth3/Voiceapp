@@ -4,7 +4,7 @@ import tempfile
 import os
 from openai import OpenAI
 
-# Page setup
+# Page config
 st.set_page_config(page_title="Transcriber", layout="centered")
 
 # Layout adjustment
@@ -19,21 +19,37 @@ st.markdown("""
 # OpenAI client
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# App header
+# Title
 st.title("AI-Powered Transcriber")
-st.write("Record your voice and click Transcribe to view your transcript.")
+st.write("Record your voice OR upload an audio file, then click Transcribe to view the text.")
 
-# Record audio
-st.subheader("Record Audio")
+# Section 1: Audio Recorder
+st.subheader("Option 1: Record Audio")
 wav_audio_data = st_audiorec()
 
-# If audio was recorded, show button
+# Section 2: File Upload Fallback
+st.subheader("Option 2: Upload Audio File")
+uploaded_file = st.file_uploader("Upload a .wav, .mp3, or .m4a file", type=["wav", "mp3", "m4a"])
+
+# Use recorded audio if available; else use uploaded file
+audio_source = None
+audio_format = None
+
 if wav_audio_data:
     st.audio(wav_audio_data, format='audio/wav')
-    
+    audio_source = wav_audio_data
+    audio_format = 'recorded'
+
+elif uploaded_file is not None:
+    st.audio(uploaded_file)
+    audio_source = uploaded_file.read()
+    audio_format = 'uploaded'
+
+# Transcription button
+if audio_source:
     if st.button("Transcribe"):
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-            f.write(wav_audio_data)
+            f.write(audio_source)
             file_path = f.name
 
         with st.spinner("Transcribing..."):
@@ -43,12 +59,16 @@ if wav_audio_data:
                         model="whisper-1",
                         file=audio_file
                     )
+
                 st.success("Transcription Complete")
                 st.subheader("Transcript")
                 st.write(transcript.text)
+
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Error during transcription: {e}")
+
             finally:
                 os.remove(file_path)
+
 else:
-    st.caption("Click the mic above to start recording.")
+    st.info("Please record audio or upload a file to enable transcription.")
