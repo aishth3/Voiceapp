@@ -3,3 +3,4 @@ openai
 speechrecognition
 pyaudio
 st-audiorecorder
+https://github.com/stefanrmmr/streamlit-audio-recorder/blob/main/st_audiorec/__init__.py
