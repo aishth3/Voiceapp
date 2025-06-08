@@ -5,6 +5,7 @@ import os
 from openai import OpenAI
 
 
+
 st.set_page_config(page_title="Transcriber", layout="centered")
 # Apply CSS to move interface higher
 st.markdown("""
@@ -16,7 +17,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
 st.title("AI-Powered Meeting Transcriber")
 st.markdown("Record your voice below and get an instant transcription!!")
 
