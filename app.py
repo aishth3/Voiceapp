@@ -3,13 +3,14 @@ import tempfile
 import os
 import speech_recognition as sr
 import openai
+from pydub import AudioSegment
 
-# Set your OpenAI key securely
+# Load OpenAI API key securely from secrets
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="Voice Transcriber", layout="centered")
 st.title("🎙️ Record or Upload & Transcribe Audio")
-st.markdown("Use the built-in recorder below or upload a `.wav` file to transcribe your voice.")
+st.markdown("Use the built-in recorder or upload a `.wav` file to transcribe your voice.")
 
 # HTML5 Voice Recorder
 st.markdown("### 🎤 Record your voice")
@@ -37,7 +38,7 @@ st.components.v1.html(
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const audio = document.getElementById('audioPlayback');
                 audio.src = audioUrl;
@@ -64,13 +65,19 @@ st.components.v1.html(
     height=250,
 )
 
-# File Uploader
-st.markdown("### 📤 Upload a `.wav` file to transcribe")
-uploaded_file = st.file_uploader("Upload WAV file", type=["wav"])
+# Upload Section
+st.markdown("### 📤 Upload your `.wav` file to transcribe")
+uploaded_file = st.file_uploader("Upload WAV audio file", type=["wav"])
 
-def transcribe_and_enhance(path):
+def convert_to_pcm(input_path):
+    output_path = input_path.replace(".wav", "_converted.wav")
+    audio = AudioSegment.from_file(input_path)
+    audio.export(output_path, format="wav", codec="pcm_s16le")
+    return output_path
+
+def transcribe_and_enhance(audio_path):
     recognizer = sr.Recognizer()
-    with sr.AudioFile(path) as source:
+    with sr.AudioFile(audio_path) as source:
         audio = recognizer.record(source)
 
     try:
@@ -93,13 +100,16 @@ def transcribe_and_enhance(path):
     except Exception as e:
         st.error(f"Transcription failed: {e}")
     finally:
-        os.remove(path)
+        os.remove(audio_path)
 
 if uploaded_file is not None:
     st.audio(uploaded_file, format="audio/wav")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
         tmp_file.write(uploaded_file.read())
         tmp_path = tmp_file.name
-    transcribe_and_enhance(tmp_path)
 
-
+    try:
+        converted_path = convert_to_pcm(tmp_path)
+        transcribe_and_enhance(converted_path)
+    finally:
+        os.remove(tmp_path)
