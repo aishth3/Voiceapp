@@ -1,6 +1,5 @@
-streamlit
 openai
-SpeechRecognition
-git+https://github.com/stefanrmmr/st-audiorec.git
+git+https://github.com/stefanrmmr/streamlit-audio-recorder.git
+streamlit-audiorec
 
 
