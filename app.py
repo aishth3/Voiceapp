@@ -4,13 +4,15 @@ import os
 import speech_recognition as sr
 import openai
 
-# Load API key from secrets
+# Set your OpenAI key securely
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="Voice Transcriber", layout="centered")
-st.title("🎙️ Record or Upload & Transcribe")
+st.title("🎙️ Record or Upload & Transcribe Audio")
+st.markdown("Use the built-in recorder below or upload a `.wav` file to transcribe your voice.")
 
-st.markdown("### 🎤 Step 1: Record your voice below and download the file")
+# HTML5 Voice Recorder
+st.markdown("### 🎤 Record your voice")
 st.components.v1.html(
     """
     <html>
@@ -62,12 +64,13 @@ st.components.v1.html(
     height=250,
 )
 
-st.markdown("### 📤 Step 2: Upload the `.wav` file you just recorded")
-uploaded_file = st.file_uploader("Upload a WAV audio file", type=["wav"])
+# File Uploader
+st.markdown("### 📤 Upload a `.wav` file to transcribe")
+uploaded_file = st.file_uploader("Upload WAV file", type=["wav"])
 
-def transcribe_and_enhance(audio_path):
+def transcribe_and_enhance(path):
     recognizer = sr.Recognizer()
-    with sr.AudioFile(audio_path) as source:
+    with sr.AudioFile(path) as source:
         audio = recognizer.record(source)
 
     try:
@@ -76,7 +79,7 @@ def transcribe_and_enhance(audio_path):
         st.write(transcript)
 
         if st.button("✨ Enhance Transcript"):
-            with st.spinner("Enhancing with GPT-4..."):
+            with st.spinner("Using GPT-4 to polish..."):
                 response = openai.ChatCompletion.create(
                     model="gpt-4",
                     messages=[
@@ -90,7 +93,7 @@ def transcribe_and_enhance(audio_path):
     except Exception as e:
         st.error(f"Transcription failed: {e}")
     finally:
-        os.remove(audio_path)
+        os.remove(path)
 
 if uploaded_file is not None:
     st.audio(uploaded_file, format="audio/wav")
@@ -98,4 +101,5 @@ if uploaded_file is not None:
         tmp_file.write(uploaded_file.read())
         tmp_path = tmp_file.name
     transcribe_and_enhance(tmp_path)
+
 
