@@ -4,7 +4,7 @@ This is a simple, browser-based voice-to-text app built using **Streamlit** and 
 
 As soon as you record your voice using the built-in mic recorder, the app automatically transcribes your speech using OpenAI's Whisper API and displays the result within seconds.
 
-🚀 Live App: [https://transcribed.streamlit.app](https://transcribed.streamlit.app)
+ Live App: [https://transcribed.streamlit.app](https://transcribed.streamlit.app)
 
 ---
 
@@ -17,7 +17,7 @@ As soon as you record your voice using the built-in mic recorder, the app automa
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - [Streamlit](https://streamlit.io/) – for frontend and app hosting
 - [st_audiorec](https://pypi.org/project/st-audiorec/) – for microphone recording
@@ -25,7 +25,7 @@ As soon as you record your voice using the built-in mic recorder, the app automa
 
 ---
 
-## 📦 Installation (for local dev)
+## Installation (for local dev)
 
 1. Clone the repo or copy `app.py`
 2. Create a `.streamlit/secrets.toml` file with your OpenAI key:
