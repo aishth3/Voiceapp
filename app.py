@@ -4,13 +4,13 @@ import os
 import speech_recognition as sr
 import openai
 
-
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Load API key from secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="Voice Transcriber", layout="centered")
 st.title("🎙️ Record or Upload & Transcribe")
 
-st.markdown("### 🎤 Record your voice")
+st.markdown("### 🎤 Step 1: Record your voice below and download the file")
 st.components.v1.html(
     """
     <html>
@@ -62,9 +62,8 @@ st.components.v1.html(
     height=250,
 )
 
-st.markdown("### 📤 Or upload a `.wav` file you just recorded")
-
-uploaded_file = st.file_uploader("Upload WAV file", type=["wav"])
+st.markdown("### 📤 Step 2: Upload the `.wav` file you just recorded")
+uploaded_file = st.file_uploader("Upload a WAV audio file", type=["wav"])
 
 def transcribe_and_enhance(audio_path):
     recognizer = sr.Recognizer()
@@ -78,7 +77,7 @@ def transcribe_and_enhance(audio_path):
 
         if st.button("✨ Enhance Transcript"):
             with st.spinner("Enhancing with GPT-4..."):
-                response = client.chat.completions.create(
+                response = openai.ChatCompletion.create(
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "Improve grammar, clarity, and structure of this transcript."},
@@ -86,11 +85,10 @@ def transcribe_and_enhance(audio_path):
                     ]
                 )
                 st.subheader("✅ Enhanced Transcript")
-                st.markdown(response.choices[0].message.content)
+                st.markdown(response.choices[0].message["content"])
 
     except Exception as e:
         st.error(f"Transcription failed: {e}")
-
     finally:
         os.remove(audio_path)
 
@@ -100,3 +98,4 @@ if uploaded_file is not None:
         tmp_file.write(uploaded_file.read())
         tmp_path = tmp_file.name
     transcribe_and_enhance(tmp_path)
+
