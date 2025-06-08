@@ -1,5 +1,5 @@
 streamlit
-openaiAdd commentMore actions
+openai
 streamlit-audiorec
 python-dotenv
 
