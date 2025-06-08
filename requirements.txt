@@ -1,8 +1,5 @@
-streamlit
-openai
-streamlit-audiorec
-python-dotenv
-
-
-
-
+streamlit>=1.30.0
+openai>=1.0.0
+st-audiorec>=0.1.2
+SpeechRecognition>=3.10.0
+python-dotenv>=1.0.1
